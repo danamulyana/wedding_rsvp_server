@@ -68,7 +68,7 @@ app.post('/api/rsvp', async (req, res) => {
   
 app.get('/api/rsvp', async (req, res) => {
   try {
-    const rsvps = await RSVP.find();
+    const rsvps = await RSVP.find().sort({ createdAt: -1 });
     res.status(200).json(rsvps);
   } catch (err) {
     res.status(500).json({ error: 'Error fetching RSVPs' });
@@ -78,7 +78,7 @@ app.get('/api/rsvp', async (req, res) => {
 app.get('/api/rsvp/:eventId', async (req, res) => {
     try {
       const { eventId } = req.params;
-      const rsvps = await RSVP.find({ eventId });
+      const rsvps = await RSVP.find({ eventId }).sort({ createdAt: -1 });
       res.status(200).json(rsvps);
     } catch (err) {
       res.status(500).json({ error: 'Error fetching RSVPs' });
