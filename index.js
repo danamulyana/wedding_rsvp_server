@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
+const NodeCache = require('node-cache');
 
 // Load environment variables
 dotenv.config();
@@ -10,24 +12,53 @@ dotenv.config();
 const allowedOrigins = process.env.CORS_ORIGIN.split(',');
 
 const corsOptions = {
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    optionsSuccessStatus: 200
-  };
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  optionsSuccessStatus: 200
+};
 
-  
+//rate limiter
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 menit
+  max: 100, // Batas 100 request per 15 menit
+  message: 'Too many requests, please try again later.'
+});
+
+const rsvpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 menit
+  max: 50, // Maksimal 50 request per 15 menit
+  message: 'Too many RSVP requests, please try again later.'
+});
+
+// Inisialisasi cache 
+const cache = new NodeCache({ stdTTL: 600 }); // TTL (Time to Live) dalam detik, 600 detik = 10 menit
+
+// Cache middleware
+const cacheMiddleware = (req, res, next) => {
+  const key = req.originalUrl; 
+  const cachedData = cache.get(key); 
+
+  if (cachedData) {
+    console.log("Caching data...");
+    return res.status(200).json(cachedData);
+  }
+
+  next();
+};
+
 // Create Express app
 const app = express();
 app.use(cors(corsOptions));
+app.use(globalLimiter);
 app.use(express.json());
 
 // MongoDB connection
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.log('Error connecting to MongoDB:', err));
 
@@ -47,7 +78,7 @@ const rsvpSchema = new mongoose.Schema({
 const RSVP = mongoose.model('RSVP', rsvpSchema);
 
 // API Routes
-app.post('/api/rsvp', async (req, res) => {
+app.post('/api/rsvp', rsvpLimiter, async (req, res) => {
     try {
         const { eventId, name, message, confirmation } = req.body;
 
@@ -57,6 +88,9 @@ app.post('/api/rsvp', async (req, res) => {
 
         const newRSVP = new RSVP({ eventId, name, message, confirmation });
         await newRSVP.save();
+
+        cache.del(`/api/rsvp/${eventId}`);
+
         res.status(201).json({ 
             payload: newRSVP.toJSON(),
             message: 'RSVP submitted successfully' 
@@ -89,7 +123,7 @@ app.get('/api/rsvp', async (req, res) => {
   }
 });
 
-app.get('/api/rsvp/:eventId', async (req, res) => {
+app.get('/api/rsvp/:eventId', cacheMiddleware, async (req, res) => {
     try {
       const { eventId } = req.params;
       const total = await RSVP.countDocuments({ eventId });
@@ -99,7 +133,8 @@ app.get('/api/rsvp/:eventId', async (req, res) => {
       const masihRaguCount = await RSVP.countDocuments({ eventId, confirmation: 'masih_ragu' });
   
       const rsvps = await RSVP.find({ eventId }).sort({ createdAt: -1 });
-      res.status(200).json({
+
+      const payload = {
         totalRSVP: total,
         counts: {
           hadir: hadirCount,
@@ -107,7 +142,11 @@ app.get('/api/rsvp/:eventId', async (req, res) => {
           masihRagu: masihRaguCount
         },
         data: rsvps
-      });
+      }
+
+      cache.set(req.originalUrl, payload);
+
+      res.status(200).json(payload);
     } catch (err) {
       res.status(500).json({ error: 'Error fetching RSVPs' });
     }
