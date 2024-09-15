@@ -68,8 +68,22 @@ app.post('/api/rsvp', async (req, res) => {
   
 app.get('/api/rsvp', async (req, res) => {
   try {
+    const total = await RSVP.countDocuments({ eventId });
+  
+    const hadirCount = await RSVP.countDocuments({ eventId, confirmation: 'hadir' });
+    const tidakHadirCount = await RSVP.countDocuments({ eventId, confirmation: 'tidak_hadir' });
+    const masihRaguCount = await RSVP.countDocuments({ eventId, confirmation: 'masih_ragu' });
+  
     const rsvps = await RSVP.find().sort({ createdAt: -1 });
-    res.status(200).json(rsvps);
+    res.status(200).json({
+      totalRSVP: total,
+      counts: {
+        hadir: hadirCount,
+        tidakHadir: tidakHadirCount,
+        masihRagu: masihRaguCount
+      },
+      data: rsvps
+    });
   } catch (err) {
     res.status(500).json({ error: 'Error fetching RSVPs' });
   }
@@ -78,8 +92,22 @@ app.get('/api/rsvp', async (req, res) => {
 app.get('/api/rsvp/:eventId', async (req, res) => {
     try {
       const { eventId } = req.params;
+      const total = await RSVP.countDocuments({ eventId });
+  
+      const hadirCount = await RSVP.countDocuments({ eventId, confirmation: 'hadir' });
+      const tidakHadirCount = await RSVP.countDocuments({ eventId, confirmation: 'tidak_hadir' });
+      const masihRaguCount = await RSVP.countDocuments({ eventId, confirmation: 'masih_ragu' });
+  
       const rsvps = await RSVP.find({ eventId }).sort({ createdAt: -1 });
-      res.status(200).json(rsvps);
+      res.status(200).json({
+        totalRSVP: total,
+        counts: {
+          hadir: hadirCount,
+          tidakHadir: tidakHadirCount,
+          masihRagu: masihRaguCount
+        },
+        data: rsvps
+      });
     } catch (err) {
       res.status(500).json({ error: 'Error fetching RSVPs' });
     }
