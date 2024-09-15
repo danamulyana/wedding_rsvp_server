@@ -36,7 +36,12 @@ const rsvpSchema = new mongoose.Schema({
     eventId: { type: String, required: true },
     name: { type: String, required: true },
     message: { type: String, required: true },
-    confirmation: { type: String, enum: ['hadir', 'tidak_hadir', 'masih_ragu'], required: true }
+    confirmation: { 
+        type: String, 
+        enum: ['hadir', 'tidak_hadir', 'masih_ragu'], 
+        required: true 
+    },
+    createdAt: { type: Date, default: Date.now }
 });
 
 const RSVP = mongoose.model('RSVP', rsvpSchema);
