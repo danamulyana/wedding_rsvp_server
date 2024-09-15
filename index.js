@@ -1,9 +1,17 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const cors = require('cors');
 
 // Load environment variables
 dotenv.config();
+
+const corsOptions = {
+    origin: ['http://bayudanputriwedding.vercel.app/', 'http://127.0.0.1:5500/'],
+    optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 
 // Create Express app
 const app = express();
