@@ -33,7 +33,7 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
 
 // RSVP Schema
 const rsvpSchema = new mongoose.Schema({
-    evendId: { type: String, required: true },
+    eventId: { type: String, required: true },
     name: { type: String, required: true },
     message: { type: String, required: true },
     confirmation: { type: String, enum: ['hadir', 'tidak_hadir', 'masih_ragu'], required: true }
