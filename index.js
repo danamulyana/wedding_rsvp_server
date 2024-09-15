@@ -44,10 +44,18 @@ const RSVP = mongoose.model('RSVP', rsvpSchema);
 // API Routes
 app.post('/api/rsvp', async (req, res) => {
     try {
-      const { eventId, name, message, confirmation } = req.body;
-      const newRSVP = new RSVP({ eventId, name, message, confirmation });
-      await newRSVP.save();
-      res.status(201).json({ message: 'RSVP submitted successfully' });
+        const { eventId, name, message, confirmation } = req.body;
+
+        if (!eventId || !name || !confirmation) {
+            return res.status(400).json({ error: 'Required fields are missing' });
+        }
+
+        const newRSVP = new RSVP({ eventId, name, message, confirmation });
+        await newRSVP.save();
+        res.status(201).json({ 
+            payload: newRSVP.toJSON(),
+            message: 'RSVP submitted successfully' 
+        });
     } catch (err) {
       res.status(400).json({ error: 'Error submitting RSVP', details: err.message });
     }
