@@ -6,6 +6,7 @@ const cors = require('cors');
 // Load environment variables
 dotenv.config();
 
+//cors
 const allowedOrigins = process.env.CORS_ORIGIN.split(',');
 
 const corsOptions = {
