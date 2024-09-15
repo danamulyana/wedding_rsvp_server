@@ -106,7 +106,6 @@ app.get('/api/rsvp/:eventId/count', async (req, res) => {
       res.status(500).json({ error: 'Error counting RSVPs' });
     }
 });  
-  
 
 // Start the server
 const port = process.env.PORT || 3000;
