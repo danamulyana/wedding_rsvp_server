@@ -53,7 +53,7 @@ const cacheMiddleware = (req, res, next) => {
 
 // Create Express app
 const app = express();
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(globalLimiter);
 app.use(express.json());
 
